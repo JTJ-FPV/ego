@@ -57,6 +57,10 @@ int main()
     ego_config.dimension = 2;
     ego_config.map_resolution = 0.25;
     ego_config.planning_height = 1.25;
+    require(std::abs(ego_config.obstacle_clearance - 0.15) < 1e-12,
+            "wrong default obstacle clearance");
+    require(std::abs(ego_config.soft_obstacle_clearance - 0.5) < 1e-12,
+            "wrong default soft obstacle clearance");
     ego::Ego planner(ego_config, &freeMap);
     require(planner.trajectory().getDimensions() == 2, "wrong trajectory dimension");
 
@@ -97,6 +101,8 @@ int main()
     obstacle_config.astar_max_time_ms = 100.0;
     obstacle_config.weight_collision = 10000.0;
     obstacle_config.weight_soft_collision = 5000.0;
+    obstacle_config.obstacle_clearance = 0.2;
+    obstacle_config.soft_obstacle_clearance = 0.6;
     obstacle_config.samples_per_piece = 5;
     obstacle_config.max_velocity = 3.0;
     obstacle_config.max_acceleration = 3.0;

@@ -32,6 +32,9 @@ struct Config
     double weight_acceleration = 1.0;
     double weight_jerk = 1.0;
 
+    double obstacle_clearance = 0.15;
+    double soft_obstacle_clearance = 0.5;
+
     double max_velocity = 3.0;
     double max_acceleration = 3.0;
     double max_jerk = 6.0;
@@ -127,6 +130,8 @@ private:
     double weight_v_ = 1.0;
     double weight_a_ = 1.0;
     double weight_j_ = 1.0;
+    double obstacle_clearance_ = 0.15;
+    double soft_obstacle_clearance_ = 0.5;
     double v_max_ = 3.0;
     double acc_max_ = 3.0;
     double jerk_max_ = 6.0;

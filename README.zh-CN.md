@@ -60,7 +60,7 @@ ego::Ego planner(config, [&map](const Eigen::Vector3d &point) {
 | `weight_acceleration` | 超加速度惩罚 |
 | `weight_jerk` | 超 jerk 惩罚 |
 
-旧接口中的垂直视差、水平视差和最大偏航权重没有进入任何代价或梯度计算，已从公共配置和实现中删除。
+`obstacle_clearance` 和 `soft_obstacle_clearance` 分别配置硬、软障碍物安全距离，默认值为 `0.15` m 和 `0.5` m。
 
 其他重要参数包括 `dimension`、`piece_length`、`map_resolution`、`map_origin`、`astar_max_time_ms`、`planning_height`、动力学上限和 `samples_per_piece`。
 

@@ -29,6 +29,10 @@ void Ego::configure(const Config &config, OccupancyQuery occupancy_query)
         throw std::invalid_argument("ego: map resolution must be positive");
     if (config.samples_per_piece <= 0)
         throw std::invalid_argument("ego: samples_per_piece must be positive");
+    if (!std::isfinite(config.obstacle_clearance) || config.obstacle_clearance < 0.0 ||
+        !std::isfinite(config.soft_obstacle_clearance) ||
+        config.soft_obstacle_clearance < 0.0)
+        throw std::invalid_argument("ego: obstacle clearances must be finite and non-negative");
     if (config.max_velocity <= 0.0 || config.max_acceleration <= 0.0 ||
         config.max_jerk <= 0.0)
         throw std::invalid_argument("ego: dynamic limits must be positive");
@@ -47,6 +51,8 @@ void Ego::configure(const Config &config, OccupancyQuery occupancy_query)
     weight_v_ = config.weight_velocity;
     weight_a_ = config.weight_acceleration;
     weight_j_ = config.weight_jerk;
+    obstacle_clearance_ = config.obstacle_clearance;
+    soft_obstacle_clearance_ = config.soft_obstacle_clearance;
     K_ = config.samples_per_piece;
     v_max_ = config.max_velocity;
     acc_max_ = config.max_acceleration;
@@ -326,48 +332,40 @@ bool Ego::obstacleGradCostP(const int id, const Eigen::VectorXd &pos, Eigen::Vec
     costp = 0;
 
     Eigen::Vector3d pose;
-    size_t j_worst = 0;
-    double dist_min = std::numeric_limits<double>::max();
+    if(2 == minco_ptr_->getDimensions())
+        pose << pos.x(), pos.y(), a_star_->height();
+    else
+        pose = pos;
+
     for(size_t j = 0; j < direction_[id].size(); ++j)
     {
-        if(2 == minco_ptr_->getDimensions())
-            pose << pos.x(), pos.y(), a_star_->height();
-        else
-            pose = pos;
-        double dist = (pose - base_point_[id][j]).dot(direction_[id][j]);
-        if(dist < dist_min)
+        const double dist = (pose - base_point_[id][j]).dot(direction_[id][j]);
+        const double dist_err = obstacle_clearance_ - dist;
+        const double dist_err_soft = soft_obstacle_clearance_ - dist;
+        const Eigen::Vector3d &dist_grad = direction_[id][j];
+
+        if(dist_err > 0)
         {
-            dist_min = dist;
-            j_worst = j;
+            ret = true;
+            costp += weight_c_ * std::pow(dist_err, 3);
+            if(2 == minco_ptr_->getDimensions())
+                gradp += -weight_c_ * 3.0 * dist_err * dist_err * dist_grad.head(2);
+            else
+                gradp += -weight_c_ * 3.0 * dist_err * dist_err * dist_grad;
         }
-    }
 
-    double dist_err = 0.15 - dist_min;
-    double dist_err_soft = 0.5 - dist_min;
-    Eigen::Vector3d dist_grad = direction_[id][j_worst];
-    if(dist_err > 0)
-    {   
-        // std::cout << "dist err : " << weight_c_ * pow(dist_err, 3) << std::endl;
-        ret = true;
-        costp += weight_c_ * pow(dist_err, 3);
-        if(2 == minco_ptr_->getDimensions())
-            gradp += -weight_c_ * 3.0 * dist_err * dist_err * dist_grad.head(2);
-        else
-            gradp += -weight_c_ * 3.0 * dist_err * dist_err * dist_grad;
-    }
-
-    if(dist_err_soft > 0)
-    {
-        ret = true;
-        double r = 0.05;
-        double rsqr = r * r;
-        double term = sqrt(1.0 + dist_err_soft * dist_err_soft / rsqr);
-        costp += weight_c_soft_ * rsqr * (term - 1.0);
-        // std::cout << "soft dist err : " << weight_c_soft_ * rsqr * (term - 1.0) << std::endl;
-        if(2 == minco_ptr_->getDimensions())
-            gradp += -weight_c_soft_ * dist_err_soft / term * dist_grad.head(2);
-        else
-            gradp += -weight_c_soft_ * dist_err_soft / term * dist_grad;
+        if(dist_err_soft > 0)
+        {
+            ret = true;
+            constexpr double r = 0.05;
+            constexpr double rsqr = r * r;
+            const double term = std::sqrt(1.0 + dist_err_soft * dist_err_soft / rsqr);
+            costp += weight_c_soft_ * rsqr * (term - 1.0);
+            if(2 == minco_ptr_->getDimensions())
+                gradp += -weight_c_soft_ * dist_err_soft / term * dist_grad.head(2);
+            else
+                gradp += -weight_c_soft_ * dist_err_soft / term * dist_grad;
+        }
     }
 
     return ret;

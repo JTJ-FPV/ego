@@ -31,6 +31,8 @@ int main(int argc, char **argv)
     config.astar_max_time_ms = 100.0;
     config.weight_collision = 10000.0;
     config.weight_soft_collision = 5000.0;
+    config.obstacle_clearance = 0.15;
+    config.soft_obstacle_clearance = 0.5;
     config.samples_per_piece = 5;
     config.max_velocity = 3.0;
     config.max_acceleration = 3.0;

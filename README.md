@@ -60,7 +60,7 @@ The following `ego::Config` weights participate in an actual cost or gradient ca
 | `weight_acceleration` | Acceleration-limit violation penalty |
 | `weight_jerk` | Jerk-limit violation penalty |
 
-The legacy vertical-parallax, horizontal-parallax, and maximum-yaw weights were never used by a cost or gradient and have been removed from both the public configuration and the implementation.
+`obstacle_clearance` and `soft_obstacle_clearance` configure the hard and soft obstacle distances. Their defaults are `0.15` m and `0.5` m.
 
 Other important fields include `dimension`, `piece_length`, `map_resolution`, `map_origin`, `astar_max_time_ms`, `planning_height`, the dynamic limits, and `samples_per_piece`.
 
