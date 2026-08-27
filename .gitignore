@@ -1,0 +1,7 @@
+/build/
+/cmake-build-*/
+/*.csv
+/*.png
+__pycache__/
+*.py[cod]
+.DS_Store
